@@ -138,6 +138,7 @@ Response:
 | GET | `/v1/publish/history` | `publish:read` |
 | GET | `/v1/publish/:id` | `publish:read` |
 | GET | `/v1/publish/insights/:account_id/:post_id` | `analytics:read` |
+| POST | `/v1/publish/threads-insights` | `analytics:read` |
 
 **POST `/v1/publish`** body:
 ```json
@@ -155,6 +156,16 @@ Response:
 }
 ```
 Response: `{ results: [...], partial_failure: bool }` dengan `{ status: 'success'|'failed', post_id, post_url, error? }`.
+
+**POST `/v1/publish/threads-insights`** body:
+```json
+{
+  "account_id": "uuid",
+  "limit": 25,
+  "save": true
+}
+```
+Response: `{ accountId, username, posts: [{ id, text, timestamp, permalink, metrics: { views, likes, replies, reposts, quotes } }], accountLinkClicks: [{ link_url, value }], fetchedAt }`.
 
 ### Schedule (Content Calendar)
 | Method | Path | Scope |

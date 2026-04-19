@@ -256,7 +256,7 @@ export async function generate({
   provider,
   modelId,
   customModelId,
-  jsonMode = true,
+  jsonMode = false,
 }) {
   if (!systemPrompt || !userPrompt) throw badRequest('systemPrompt & userPrompt wajib')
   if (systemPrompt.length > 10000) throw badRequest('systemPrompt max 10000 char')
@@ -329,7 +329,7 @@ export async function generate({
           ],
           temperature,
           max_tokens: maxTokens,
-          response_format: { type: 'json_object' },
+          ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
         }),
       })
 

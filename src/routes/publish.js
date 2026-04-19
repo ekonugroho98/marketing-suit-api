@@ -4,6 +4,7 @@
 import { db } from '../db.js'
 import { decryptToken } from '../crypto.js'
 import { publishToPlatform, getPlatformInsights } from '../services/publishers.js'
+import { fetchThreadsPostsWithInsights, fetchThreadsAccountClicks } from '../services/threads.js'
 import { requireScope } from '../middleware/auth.js'
 import { badRequest, notFound } from '../utils/errors.js'
 import { parsePagination } from '../utils/validate.js'
@@ -129,6 +130,64 @@ export default async function publishRoutes(app) {
         accessToken,
         postId: req.params.post_id,
       })
+    },
+  )
+
+  // POST /v1/publish/threads-insights — sync Threads posts + insights
+  // body: { account_id, limit?, save? }
+  app.post(
+    '/threads-insights',
+    { preHandler: requireScope('analytics:read') },
+    async (req) => {
+      const b = req.body || {}
+      if (!b.account_id) throw badRequest('account_id wajib')
+      const limit = Math.min(Math.max(Number(b.limit) || 25, 1), 50)
+      const save = Boolean(b.save)
+
+      const acc = await loadAccount(req.user.id, b.account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+
+      const posts = await fetchThreadsPostsWithInsights({
+        accessToken,
+        platformUserId: acc.platform_user_id,
+        limit,
+      })
+
+      let accountLinkClicks = []
+      if (acc.platform_user_id) {
+        accountLinkClicks = await fetchThreadsAccountClicks({
+          accessToken,
+          platformUserId: acc.platform_user_id,
+        })
+      }
+
+      // Optionally save to threads_post_insights table
+      if (save && posts.length) {
+        const rows = posts.map((p) => ({
+          user_id: req.user.id,
+          connected_account_id: acc.id,
+          platform_post_id: p.id,
+          post_text: p.text ?? null,
+          permalink: p.permalink ?? null,
+          link_attachment_url: p.link_attachment_url ?? null,
+          media_type: p.media_type ?? null,
+          metrics: p.metrics,
+          fetched_at: new Date().toISOString(),
+        }))
+        const { error: upErr } = await db
+          .from('threads_post_insights')
+          .upsert(rows, { onConflict: 'connected_account_id,platform_post_id' })
+        if (upErr) throw new Error(`Gagal simpan insights: ${upErr.message}`)
+      }
+
+      return {
+        accountId: acc.id,
+        username: acc.platform_username,
+        posts,
+        accountLinkClicks,
+        fetchedAt: new Date().toISOString(),
+      }
     },
   )
 }

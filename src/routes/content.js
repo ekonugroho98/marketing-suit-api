@@ -27,7 +27,7 @@ export default async function contentRoutes(app) {
       provider: b.provider,
       modelId: b.modelId,
       customModelId: b.customModelId,
-      jsonMode: b.jsonMode ?? true,
+      jsonMode: b.jsonMode ?? false,
     })
 
     // Optionally log to generation_history if type provided
