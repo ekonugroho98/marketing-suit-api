@@ -77,11 +77,20 @@ async function buildApp() {
 export default async function handler(req, res) {
   const fastify = await buildApp()
 
+  // Vercel parses body automatically, but Content-Length header may not match
+  // when unicode characters are involved. We need to let Fastify handle the body
+  // without the original Content-Length header.
+  const headers = { ...req.headers }
+  
+  // Remove Content-Length to let Fastify calculate it correctly for the payload
+  // This fixes "Request body size did not match Content-Length" with unicode chars
+  delete headers['content-length']
+
   // Use Fastify's built-in inject to handle the request
   const response = await fastify.inject({
     method: req.method,
     url: req.url,
-    headers: req.headers,
+    headers: headers,
     payload: req.body,
   })
 
