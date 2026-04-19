@@ -137,8 +137,14 @@ Response:
 | POST | `/v1/publish` | `publish:write` |
 | GET | `/v1/publish/history` | `publish:read` |
 | GET | `/v1/publish/:id` | `publish:read` |
+| DELETE | `/v1/publish/:account_id/:post_id` | `publish:write` |
 | GET | `/v1/publish/insights/:account_id/:post_id` | `analytics:read` |
 | POST | `/v1/publish/threads-insights` | `analytics:read` |
+| GET | `/v1/publish/threads-search?account_id=UUID&q=KEYWORD&limit=25` | `analytics:read` |
+| GET | `/v1/publish/threads-mentions?account_id=UUID&limit=25` | `analytics:read` |
+| GET | `/v1/publish/threads-replies/:account_id/:post_id` | `analytics:read` |
+| GET | `/v1/publish/threads-conversation/:account_id/:post_id` | `analytics:read` |
+| GET | `/v1/publish/threads-profile/:account_id` | `accounts:read` |
 
 **POST `/v1/publish`** body:
 ```json

@@ -164,3 +164,81 @@ export async function fetchThreadsAccountClicks({ accessToken, platformUserId })
   if (!res.ok || json.error) return []
   return json.data?.[0]?.link_total_values || []
 }
+
+// Delete a Threads post
+export async function deleteThreadsPost({ accessToken, postId }) {
+  const res = await fetch(
+    `${GRAPH}/${postId}?access_token=${encodeURIComponent(accessToken)}`,
+    { method: 'DELETE' },
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Gagal hapus post (${res.status}): ${text}`)
+  }
+  return await res.json()
+}
+
+// Search Threads by keyword
+export async function searchThreads({ accessToken, query, limit = 25 }) {
+  const fields = 'id,text,timestamp,permalink,media_type'
+  const res = await fetch(
+    `${GRAPH}/threads/search?q=${encodeURIComponent(query)}&fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(accessToken)}`,
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Threads search error (${res.status}): ${text}`)
+  }
+  return await res.json()
+}
+
+// Fetch mentions of the authenticated user
+export async function fetchThreadsMentions({ accessToken, limit = 25 }) {
+  const fields = 'id,text,timestamp,permalink,username'
+  const res = await fetch(
+    `${GRAPH}/me/mentions?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(accessToken)}`,
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Threads mentions error (${res.status}): ${text}`)
+  }
+  return await res.json()
+}
+
+// Fetch replies to a specific post
+export async function fetchThreadsReplies({ accessToken, postId }) {
+  const fields = 'id,text,timestamp,username,permalink'
+  const res = await fetch(
+    `${GRAPH}/${postId}/replies?fields=${fields}&access_token=${encodeURIComponent(accessToken)}`,
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Threads replies error (${res.status}): ${text}`)
+  }
+  return await res.json()
+}
+
+// Fetch full conversation thread
+export async function fetchThreadsConversation({ accessToken, postId }) {
+  const fields = 'id,text,timestamp,username,permalink'
+  const res = await fetch(
+    `${GRAPH}/${postId}/conversation?fields=${fields}&access_token=${encodeURIComponent(accessToken)}`,
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Threads conversation error (${res.status}): ${text}`)
+  }
+  return await res.json()
+}
+
+// Fetch public profile by user_id
+export async function fetchThreadsProfile({ accessToken, userId }) {
+  const fields = 'id,username,name,threads_profile_picture_url,threads_biography'
+  const res = await fetch(
+    `${GRAPH}/${userId}?fields=${fields}&access_token=${encodeURIComponent(accessToken)}`,
+  )
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Threads profile error (${res.status}): ${text}`)
+  }
+  return await res.json()
+}

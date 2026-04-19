@@ -4,7 +4,7 @@
 import { db } from '../db.js'
 import { decryptToken } from '../crypto.js'
 import { publishToPlatform, getPlatformInsights } from '../services/publishers.js'
-import { fetchThreadsPostsWithInsights, fetchThreadsAccountClicks } from '../services/threads.js'
+import { fetchThreadsPostsWithInsights, fetchThreadsAccountClicks, deleteThreadsPost, searchThreads, fetchThreadsMentions, fetchThreadsReplies, fetchThreadsConversation, fetchThreadsProfile } from '../services/threads.js'
 import { requireScope } from '../middleware/auth.js'
 import { badRequest, notFound } from '../utils/errors.js'
 import { parsePagination } from '../utils/validate.js'
@@ -188,6 +188,103 @@ export default async function publishRoutes(app) {
         accountLinkClicks,
         fetchedAt: new Date().toISOString(),
       }
+    },
+  )
+
+  // DELETE /v1/publish/:account_id/:post_id — delete a Threads post
+  app.delete(
+    '/:account_id/:post_id',
+    { preHandler: requireScope('publish:write') },
+    async (req) => {
+      const acc = await loadAccount(req.user.id, req.params.account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      const result = await deleteThreadsPost({
+        accessToken,
+        postId: req.params.post_id,
+      })
+      return { success: true, postId: req.params.post_id, ...result }
+    },
+  )
+
+  // GET /v1/publish/threads-search?account_id=UUID&q=KEYWORD — search Threads
+  app.get(
+    '/threads-search',
+    { preHandler: requireScope('analytics:read') },
+    async (req) => {
+      const { account_id, q, limit = 25 } = req.query
+      if (!account_id) throw badRequest('account_id wajib')
+      if (!q) throw badRequest('q (keyword) wajib')
+      const acc = await loadAccount(req.user.id, account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      return await searchThreads({
+        accessToken,
+        query: q,
+        limit: Math.min(Number(limit) || 25, 100),
+      })
+    },
+  )
+
+  // GET /v1/publish/threads-mentions?account_id=UUID — fetch mentions
+  app.get(
+    '/threads-mentions',
+    { preHandler: requireScope('analytics:read') },
+    async (req) => {
+      const { account_id, limit = 25 } = req.query
+      if (!account_id) throw badRequest('account_id wajib')
+      const acc = await loadAccount(req.user.id, account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      return await fetchThreadsMentions({
+        accessToken,
+        limit: Math.min(Number(limit) || 25, 100),
+      })
+    },
+  )
+
+  // GET /v1/publish/threads-replies/:account_id/:post_id — fetch replies to a post
+  app.get(
+    '/threads-replies/:account_id/:post_id',
+    { preHandler: requireScope('analytics:read') },
+    async (req) => {
+      const acc = await loadAccount(req.user.id, req.params.account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      return await fetchThreadsReplies({
+        accessToken,
+        postId: req.params.post_id,
+      })
+    },
+  )
+
+  // GET /v1/publish/threads-conversation/:account_id/:post_id — fetch full conversation
+  app.get(
+    '/threads-conversation/:account_id/:post_id',
+    { preHandler: requireScope('analytics:read') },
+    async (req) => {
+      const acc = await loadAccount(req.user.id, req.params.account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      return await fetchThreadsConversation({
+        accessToken,
+        postId: req.params.post_id,
+      })
+    },
+  )
+
+  // GET /v1/publish/threads-profile/:account_id — fetch public profile
+  app.get(
+    '/threads-profile/:account_id',
+    { preHandler: requireScope('accounts:read') },
+    async (req) => {
+      const acc = await loadAccount(req.user.id, req.params.account_id)
+      if (acc.platform !== 'threads') throw badRequest('Akun bukan Threads')
+      const accessToken = decryptToken(acc.access_token_encrypted)
+      return await fetchThreadsProfile({
+        accessToken,
+        userId: acc.platform_user_id,
+      })
     },
   )
 }
