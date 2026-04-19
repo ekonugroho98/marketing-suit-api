@@ -220,6 +220,7 @@ export default async function publishRoutes(app) {
       const accessToken = decryptToken(acc.access_token_encrypted)
       return await searchThreads({
         accessToken,
+        platformUserId: acc.platform_user_id,
         query: q,
         limit: Math.min(Number(limit) || 25, 100),
       })

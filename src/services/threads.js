@@ -179,10 +179,10 @@ export async function deleteThreadsPost({ accessToken, postId }) {
 }
 
 // Search Threads by keyword
-export async function searchThreads({ accessToken, query, limit = 25 }) {
+export async function searchThreads({ accessToken, platformUserId, query, limit = 25 }) {
   const fields = 'id,text,timestamp,permalink,media_type'
   const res = await fetch(
-    `${GRAPH}/threads/search?q=${encodeURIComponent(query)}&fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(accessToken)}`,
+    `${GRAPH}/${platformUserId}/threads_search?q=${encodeURIComponent(query)}&fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(accessToken)}`,
   )
   if (!res.ok) {
     const text = await res.text()
