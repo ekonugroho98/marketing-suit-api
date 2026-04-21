@@ -2,6 +2,12 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). API follows SemVer starting at `v1`.
 
+## [0.1.1] — 2026-04-21
+
+### Fixed
+- **threads-search endpoint**: Changed from user-scoped `/{userId}/threads_search` to top-level `/threads_search` endpoint. Meta's Threads API keyword search is not a user edge — the previous path caused 400 errors ('nonexisting field threads_search'). Requires `threads_keyword_search` permission.
+- **Token encoding**: URL-encode `accessToken` in container status-check and `getThreadsInsights` fetch calls (consistency fix — other endpoints already encoded correctly).
+
 ## [0.1.0] — 2026-04-16
 
 ### Added

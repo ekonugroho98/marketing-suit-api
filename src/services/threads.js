@@ -48,7 +48,7 @@ export async function publishThreads({
   await sleep(3000)
   for (let i = 1; i <= 15; i++) {
     const st = await fetch(
-      `${GRAPH}/${creationId}?fields=status,id&access_token=${accessToken}`,
+      `${GRAPH}/${creationId}?fields=status,id&access_token=${encodeURIComponent(accessToken)}`,
     )
     const sd = await st.json()
     if (sd.status === 'FINISHED') break
@@ -71,7 +71,7 @@ export async function publishThreads({
 export async function getThreadsInsights({ accessToken, postId }) {
   const metrics = 'views,likes,replies,reposts,quotes'
   const res = await fetch(
-    `${GRAPH}/${postId}/insights?metric=${metrics}&access_token=${accessToken}`,
+    `${GRAPH}/${postId}/insights?metric=${metrics}&access_token=${encodeURIComponent(accessToken)}`,
   )
   if (!res.ok) throw new Error(`Threads insights error: ${await res.text()}`)
   return await res.json()
@@ -179,10 +179,12 @@ export async function deleteThreadsPost({ accessToken, postId }) {
 }
 
 // Search Threads by keyword
-export async function searchThreads({ accessToken, platformUserId, query, limit = 25 }) {
+// Uses top-level /threads_search endpoint (NOT user-scoped).
+// Requires threads_keyword_search permission on the access token.
+export async function searchThreads({ accessToken, query, limit = 25 }) {
   const fields = 'id,text,timestamp,permalink,media_type'
   const res = await fetch(
-    `${GRAPH}/${platformUserId}/threads_search?q=${encodeURIComponent(query)}&fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(accessToken)}`,
+    `${GRAPH}/threads_search?q=${encodeURIComponent(query)}&fields=${fields}&limit=${Math.min(limit, 100)}&access_token=${encodeURIComponent(accessToken)}`,
   )
   if (!res.ok) {
     const text = await res.text()
